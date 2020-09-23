@@ -39,7 +39,9 @@ class ReceiveSsrcStore(
     /**
      * All receive SSRCs indexed by their media type
      */
-    private val receiveSsrcsByMediaType: MutableMap<MediaType, MutableSet<Long>> =
+    // hasevr
+    //    private val receiveSsrcsByMediaType: MutableMap<MediaType, MutableSet<Long>> =
+    val receiveSsrcsByMediaType: MutableMap<MediaType, MutableSet<Long>> =
         ConcurrentHashMap()
 
     /**

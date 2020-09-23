@@ -114,6 +114,8 @@ class StreamInformationStoreImpl : StreamInformationStore {
     private val receiveSsrcStore = ReceiveSsrcStore(localSsrcAssociations)
     override val receiveSsrcs: Set<Long>
         get() = receiveSsrcStore.receiveSsrcs
+    val receiveSsrcsByMediaType: MutableMap<MediaType, MutableSet<Long>>
+        get() = receiveSsrcStore.receiveSsrcsByMediaType
     override val primaryMediaSsrcs: Set<Long>
         get() = receiveSsrcStore.primaryMediaSsrcs
     override val primaryVideoSsrcs: Set<Long>
