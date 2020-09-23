@@ -199,6 +199,10 @@ class Transceiver(
 
     fun receivesSsrc(ssrc: Long): Boolean = streamInformationStore.receiveSsrcs.contains(ssrc)
 
+    fun receivesSsrcs(): Set<Long> = streamInformationStore.receiveSsrcs
+    fun receiveSsrcsByMediaType(): MutableMap<MediaType, MutableSet<Long>> =
+        streamInformationStore.receiveSsrcsByMediaType
+
     fun setMediaSources(mediaSources: Array<MediaSourceDesc>): Boolean {
         logger.cdebug { "$id setting media sources: ${mediaSources.joinToString()}" }
         val ret = this.mediaSources.setMediaSources(mediaSources)
