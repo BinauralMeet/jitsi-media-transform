@@ -16,6 +16,8 @@
 
 package org.jitsi.nlj.transform.node.incoming
 
+import org.jitsi.config.JitsiConfig
+import org.jitsi.metaconfig.config
 import org.jitsi.nlj.Event
 import org.jitsi.nlj.PacketInfo
 import org.jitsi.nlj.SetMediaSourcesEvent
@@ -23,14 +25,15 @@ import org.jitsi.nlj.rtp.VideoRtpPacket
 import org.jitsi.nlj.stats.NodeStatsBlock
 import org.jitsi.nlj.transform.node.ObserverNode
 import org.jitsi.nlj.util.Bandwidth
-import org.jitsi.nlj.util.bps
 import org.jitsi.utils.logging2.cdebug
 import org.jitsi.utils.logging2.Logger
 import org.jitsi.utils.logging2.createChildLogger
-import org.jitsi.utils.stats.RateStatistics
 import org.jitsi.nlj.MediaSourceDesc
 import org.jitsi.nlj.RtpLayerDesc
+import org.jitsi.nlj.util.BitrateTracker
+import org.jitsi.nlj.util.bytes
 import org.jitsi.utils.secs
+import org.jitsi.utils.stats.RateTracker
 import java.time.Clock
 import java.time.Duration
 
@@ -54,7 +57,7 @@ class VideoBitrateCalculator(
         val videoRtpPacket: VideoRtpPacket = packetInfo.packet as VideoRtpPacket
         findRtpLayerDesc(videoRtpPacket)?.let {
             val now = System.currentTimeMillis()
-            it.updateBitrate(videoRtpPacket.length, now)
+            it.updateBitrate(videoRtpPacket.length.bytes, now)
         }
     }
 
@@ -87,12 +90,12 @@ open class BitrateCalculator(
     private val activePacketRateThreshold: Int = 5,
     private val clock: Clock = Clock.systemUTC()
 ) : ObserverNode(name) {
-    private val bitrateStatistics = RateStatistics(5000, 8000f)
-    private val packetRateStatistics = RateStatistics(5000, 1000f)
+    private val bitrateTracker = createBitrateTracker()
+    private val packetRateTracker = createRateTracker()
     val bitrate: Bandwidth
-        get() = bitrateStatistics.rate.bps
+        get() = bitrateTracker.rate
     val packetRatePps: Long
-        get() = packetRateStatistics.rate
+        get() = packetRateTracker.rate
     private val start = clock.instant()
 
     /**
@@ -103,8 +106,8 @@ open class BitrateCalculator(
 
     override fun observe(packetInfo: PacketInfo) {
         val now = System.currentTimeMillis()
-        bitrateStatistics.update(packetInfo.packet.length, now)
-        packetRateStatistics.update(1, now)
+        bitrateTracker.update(packetInfo.packet.length.bytes, now)
+        packetRateTracker.update(1, now)
     }
 
     override fun trace(f: () -> Unit) = f.invoke()
@@ -124,5 +127,22 @@ open class BitrateCalculator(
          * The initial period in which we consider the stream active regardless of packet rate.
          */
         val GRACE_PERIOD = 10.secs
+
+        /**
+         * The size of the window over which to calculate average rates.
+         */
+        val windowSize: Duration by config {
+            "jmt.rtp.bitrate-calculator.window-size".from(JitsiConfig.newConfig)
+        }
+
+        /**
+         * The size of the buckets to use when calculating average rates.
+         */
+        val bucketSize: Duration by config {
+            "jmt.rtp.bitrate-calculator.bucket-size".from(JitsiConfig.newConfig)
+        }
+
+        fun createBitrateTracker() = BitrateTracker(windowSize, bucketSize)
+        fun createRateTracker() = RateTracker(windowSize, bucketSize)
     }
 }
