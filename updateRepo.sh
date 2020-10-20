@@ -1,5 +1,5 @@
 MODULE_NAME=jitsi-media-transform
-REPO_HOME=C:/Home/hase/debian/jitsi-maven-repository
+REPO_HOME=~hase/win/jvb-libs/jitsi-maven-repository
 
 # Deploy the module.
 mvn deploy -DaltDeploymentRepository=jmrs::default::file://$REPO_HOME/snapshots
